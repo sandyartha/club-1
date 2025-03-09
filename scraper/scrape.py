@@ -8,7 +8,7 @@ from typing import List, Dict
 from bs4 import BeautifulSoup
 import pycountry
 
-# Setup logging
+# Setup logging1
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def get_country_code(country_name: str) -> str:
