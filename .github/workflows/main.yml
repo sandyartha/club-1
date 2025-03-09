@@ -2,8 +2,8 @@ name: Scrape Data from Example
 
 on:
   schedule:
-    - cron: '0 12 * * *'  # Menjalankan setiap hari pada pukul 12:00 UTC
-  workflow_dispatch:  # Memungkinkan menjalankan workflow secara manual
+    - cron: '0 12 * * *'  # Menjalankan setiap hari pukul 12:00 UTC
+  workflow_dispatch:  # Bisa dijalankan manual
 
 jobs:
   scrape:
@@ -27,19 +27,14 @@ jobs:
         run: |
           pip install playwright
           playwright install
-          playwright install-deps  # Menyediakan dependensi sistem yang diperlukan
+          playwright install-deps
 
       - name: Run scraper
         run: python scraper/scrape.py
 
-      - name: Commit and Push Data
-        env:
-          GH_PAT: ${{ secrets.GH_PAT }}
-        run: |
-          git config --global user.name 'github-actions'
-          git config --global user.email 'github-actions@github.com'
-          git remote set-url origin https://x-access-token:${GH_PAT}@github.com/sandyartha/club-1.git
-          git add scraped_data.json
-          git commit -m "Update scraped data [$(date)]" || echo "No changes to commit"
-          git push origin master
-
+      - name: Upload Scraped Data
+        uses: actions/upload-artifact@v4
+        with:
+          name: scraped-data
+          path: scraped_data.json
+          retention-days: 7  # Simpan selama 7 hari
