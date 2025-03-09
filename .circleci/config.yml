@@ -3,23 +3,26 @@ version: 2.1
 executors:
   python-executor:
     docker:
-      - image: mcr.microsoft.com/playwright/python:v1.42.0  # Gunakan Playwright pre-installed
-    resource_class: small
+      - image: cimg/python:3.10  # Gunakan Python 3.10
+    working_directory: ~/project
 
 jobs:
   scrape_data:
     executor: python-executor
-    working_directory: ~/project  # Tambahkan ini
     steps:
-      - checkout
+      - checkout  # Clone repo
+      
       - run:
           name: Install Dependencies
           command: |
             python -m pip install --upgrade pip
             pip install -r requirements.txt
+            playwright install --with-deps chromium  # Install Chromium dan dependencies
+
       - run:
-          name: Run Scraping
+          name: Run Scraping Script
           command: python scrape.py
+
       - store_artifacts:
           path: dataset
           destination: scraped_data
