@@ -1,10 +1,30 @@
-    steps:
-      - run:
-          name: run tests
-          command: |
-            . venv/bin/activate
-            mkdir test-results
-            pytest --junitxml=test-results/junit.xml
+version: 2.1
 
-      - store_test_results:
-          path: test-results
+executors:
+  python-executor:
+    docker:
+      - image: mcr.microsoft.com/playwright/python:v1.42.0  # Gunakan Playwright pre-installed
+    resource_class: small
+
+jobs:
+  scrape_data:
+    executor: python-executor
+    steps:
+      - checkout  # Ambil kode dari repo
+      - run:
+          name: Install Dependencies
+          command: |
+            python -m pip install --upgrade pip
+            pip install -r requirements.txt
+      - run:
+          name: Run Scraping
+          command: python scrape.py
+      - store_artifacts:
+          path: dataset  # Simpan file hasil scraping sebagai artifact
+          destination: scraped_data
+
+workflows:
+  version: 2
+  scrape_workflow:
+    jobs:
+      - scrape_data
