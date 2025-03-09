@@ -9,8 +9,9 @@ executors:
 jobs:
   scrape_data:
     executor: python-executor
+    working_directory: ~/project  # Tambahkan ini
     steps:
-      - checkout  # Ambil kode dari repo
+      - checkout
       - run:
           name: Install Dependencies
           command: |
@@ -20,7 +21,7 @@ jobs:
           name: Run Scraping
           command: python scrape.py
       - store_artifacts:
-          path: dataset  # Simpan file hasil scraping sebagai artifact
+          path: dataset
           destination: scraped_data
 
 workflows:
