@@ -8,7 +8,7 @@ from typing import List, Dict
 from bs4 import BeautifulSoup
 import pycountry
 
-# Setup logging
+# Setup logging1
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def get_country_code(country_name: str) -> str:
@@ -225,7 +225,7 @@ def save_to_csv(data: List[Dict[str, str]], club_name: str):
     logging.info(f"Data saved to {filepath}")
 
 async def scrape_multiple_urls(file_path: str, use_pagination: bool = True):
-    """Scrape multiple URLs from file."""
+    """Scrape multiple URLs from file and save each to a separate CSV."""
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
         page = await browser.new_page()
@@ -233,15 +233,15 @@ async def scrape_multiple_urls(file_path: str, use_pagination: bool = True):
         with open(file_path, "r") as file:
             urls = [line.strip() for line in file.readlines() if line.strip()]
         
-        all_data = []
         for url in urls:
             logging.info(f"Scraping URL: {url}")
             data = await scrape_page(page, url, use_pagination)
-            all_data.extend(data)
-        
-        if all_data:
-            club_name = all_data[0]["club"] if "club" in all_data[0] else "unknown_club"
-            save_to_csv(all_data, club_name)
+            
+            if data:
+                club_name = data[0]["club"] if "club" in data[0] else "unknown_club"
+                save_to_csv(data, club_name)
+            else:
+                logging.warning(f"No data scraped from {url}, skipping CSV creation")
         
         await browser.close()
 
