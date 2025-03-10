@@ -224,8 +224,8 @@ def save_to_csv(data: List[Dict[str, str]], club_name: str):
             ])
     logging.info(f"Data saved to {filepath}")
 
-async def scrape_multiple_urls(file_path: str, use_pagination: bool = True):
-    """Scrape multiple URLs from file and save each to a separate CSV."""
+async def scrape_multiple_urls(file_path: str, use_pagination: bool = True, max_retries: int = 3):
+    """Scrape multiple URLs from file and save each to a separate CSV with retries on timeout."""
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
         page = await browser.new_page()
@@ -235,13 +235,40 @@ async def scrape_multiple_urls(file_path: str, use_pagination: bool = True):
         
         for url in urls:
             logging.info(f"Scraping URL: {url}")
-            data = await scrape_page(page, url, use_pagination)
-            
-            if data:
-                club_name = data[0]["club"] if "club" in data[0] else "unknown_club"
-                save_to_csv(data, club_name)
-            else:
-                logging.warning(f"No data scraped from {url}, skipping CSV creation")
+            for attempt in range(max_retries):
+                try:
+                    data = await scrape_page(page, url, use_pagination)
+                    
+                    if data:
+                        # Ensure all required keys are present in each player dict
+                        for player in data:
+                            required_keys = [
+                                "jersey_name", "jersey_number", "full_name", "place_of_birth",
+                                "position", "height"
+                            ]
+                            for key in required_keys:
+                                if key not in player:
+                                    player[key] = "Unknown"
+                                    logging.warning(f"Missing key '{key}' for player {player.get('name', 'Unknown')}, setting to 'Unknown'")
+                        
+                        club_name = data[0]["club"] if "club" in data[0] else "unknown_club"
+                        save_to_csv(data, club_name)
+                    else:
+                        logging.warning(f"No data scraped from {url}, skipping CSV creation")
+                    break  # Jika berhasil, keluar dari loop retry
+                    
+                except Exception as e:
+                    logging.error(f"Attempt {attempt + 1}/{max_retries} failed for URL {url}: {e}")
+                    if attempt < max_retries - 1:  # Jika bukan percobaan terakhir
+                        await asyncio.sleep(2)  # Tunggu 2 detik sebelum mencoba lagi
+                        logging.info(f"Retrying URL {url}...")
+                    else:
+                        logging.error(f"All retries exhausted for {url}")
+                        # Simpan data parsial jika ada
+                        if 'data' in locals() and data:
+                            club_name = data[0]["club"] if "club" in data[0] else "unknown_club"
+                            save_to_csv(data, club_name)
+                            logging.info(f"Saved partial data for {url} after retries failed")
         
         await browser.close()
 
