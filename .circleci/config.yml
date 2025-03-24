@@ -11,7 +11,7 @@ jobs:
     executor: python-executor
     steps:
       - checkout  # Clone repo
-      
+
       - run:
           name: Install Dependencies
           command: |
@@ -23,9 +23,15 @@ jobs:
           name: Run Scraping Script
           command: python scrape.py
 
+      - run:
+          name: Compress Dataset to ZIP
+          command: |
+            apt-get update && apt-get install -y zip  # Pastikan zip terinstal
+            zip -r dataset.zip dataset/
+
       - store_artifacts:
-          path: dataset
-          destination: scraped_data
+          path: dataset.zip
+          destination: scraped_data.zip
 
 workflows:
   version: 2
